@@ -1,15 +1,25 @@
+using ContosoPizza.Data;
 using ContosoPizza.Services;
-// Additional using declarations
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "My API", Version = "v1" });
 
-// Add the PizzaContext
+    // Add a header parameter for all operations
+    c.OperationFilter<AddTenantIdHeaderParameter>();
+});
 
-// Add the PromotionsContext
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<ITenantProvider, ClaimTenantProvider>();
+builder.Services.AddSingleton<ITenantProvider, HeaderTenantProvider>();
+
+builder.Services.AddSqlite<PizzaContext>("Data Source=ContosoPizza.db");
+builder.Services.AddSqlite<PromotionsContext>("Data Source=Promotions/Promotions.db");
 
 builder.Services.AddScoped<PizzaService>();
 
@@ -26,7 +36,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Add the CreateDbIfNotExists method call
+app.CreateDbIfNotExists();
 
 app.MapGet("/", () => @"Contoso Pizza management API. Navigate to /swagger to open the Swagger test UI.");
 
